@@ -439,7 +439,7 @@
                 const candidates = this.getCandidateMoves(state);
                 if (candidates.length === 0) {
                     // Fallback to center if board is empty
-                    return { x: 7, y: 7 };
+                    return { x: Math.floor(SIZE / 2), y: Math.floor(SIZE / 2) };
                 }
 
                 // Evaluate and pick best candidate
@@ -519,8 +519,8 @@
                 }
 
                 // Prefer center positions
-                const centerDist = Math.abs(x - 7) + Math.abs(y - 7);
-                score += (28 - centerDist);
+                const centerDist = Math.abs(x - Math.floor(SIZE / 2)) + Math.abs(y - Math.floor(SIZE / 2));
+                score += (2 * SIZE - centerDist);
 
                 return score;
             },
@@ -637,8 +637,13 @@
                 // Delay for better UX
                 setTimeout(() => {
                     const move = AIEngine.getBestMove(gameState);
-                    this.applyMove(move.x, move.y, Player.WHITE);
-                    UIRenderer.showMessage('AI 已落子', 'info');
+                    if (move && move.x !== undefined && move.y !== undefined && 
+                        RuleEngine.isLegalMove(gameState, move.x, move.y)) {
+                        this.applyMove(move.x, move.y, Player.WHITE);
+                        UIRenderer.showMessage('AI 已落子', 'info');
+                    } else {
+                        UIRenderer.showMessage('AI 無法找到合法落子位置', 'error');
+                    }
                 }, 500);
             },
 
