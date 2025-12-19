@@ -168,9 +168,15 @@
     </div>
 
     <script>
+        // 常數定義 (Constants)
+        const BOARD_SIZE = 15;
+        const EMPTY = 0;
+        const BLACK_PLAYER = 1;
+        const WHITE_PLAYER = 2;
+
         // 資料結構設計 (Data Structures)
-        let board = Array(15).fill(null).map(() => Array(15).fill(0));
-        let currentPlayer = 1; // 1: 黑棋, 2: 白棋
+        let board = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(EMPTY));
+        let currentPlayer = BLACK_PLAYER;
         let gameActive = true;
 
         // DOM 元素
@@ -181,8 +187,8 @@
         // 初始化棋盤 (FR-01)
         function initBoard() {
             boardElement.innerHTML = '';
-            for (let row = 0; row < 15; row++) {
-                for (let col = 0; col < 15; col++) {
+            for (let row = 0; row < BOARD_SIZE; row++) {
+                for (let col = 0; col < BOARD_SIZE; col++) {
                     const cell = document.createElement('div');
                     cell.className = 'cell';
                     cell.dataset.row = row;
@@ -201,19 +207,19 @@
             const col = parseInt(event.currentTarget.dataset.col);
 
             // 檢查位置是否已有棋子
-            if (board[row][col] !== 0) return;
+            if (board[row][col] !== EMPTY) return;
 
             // 落子
             board[row][col] = currentPlayer;
             const piece = document.createElement('div');
-            piece.className = `piece ${currentPlayer === 1 ? 'black' : 'white'}`;
+            piece.className = `piece ${currentPlayer === BLACK_PLAYER ? 'black' : 'white'}`;
             event.currentTarget.appendChild(piece);
             event.currentTarget.classList.add('occupied');
 
             // 檢查勝負 (FR-05, FR-06)
             if (checkWin(row, col)) {
                 gameActive = false;
-                statusElement.textContent = `${currentPlayer === 1 ? '黑方' : '白方'}獲勝！🎉`;
+                statusElement.textContent = `${currentPlayer === BLACK_PLAYER ? '黑方' : '白方'}獲勝！🎉`;
                 statusElement.className = 'status game-over';
                 return;
             }
@@ -226,13 +232,13 @@
             }
 
             // 切換玩家 (FR-03, FR-04)
-            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            currentPlayer = currentPlayer === BLACK_PLAYER ? WHITE_PLAYER : BLACK_PLAYER;
             updateStatus();
         }
 
         // 更新狀態顯示 (FR-04)
         function updateStatus() {
-            statusElement.textContent = `輪到${currentPlayer === 1 ? '黑方' : '白方'}`;
+            statusElement.textContent = `輪到${currentPlayer === BLACK_PLAYER ? '黑方' : '白方'}`;
             statusElement.className = 'status game-active';
         }
 
@@ -271,7 +277,7 @@
             let newRow = row + dx;
             let newCol = col + dy;
 
-            while (newRow >= 0 && newRow < 15 && newCol >= 0 && newCol < 15) {
+            while (newRow >= 0 && newRow < BOARD_SIZE && newCol >= 0 && newCol < BOARD_SIZE) {
                 if (board[newRow][newCol] === player) {
                     count++;
                     newRow += dx;
@@ -286,9 +292,9 @@
 
         // 檢查平局 (FR-06)
         function checkDraw() {
-            for (let row = 0; row < 15; row++) {
-                for (let col = 0; col < 15; col++) {
-                    if (board[row][col] === 0) {
+            for (let row = 0; row < BOARD_SIZE; row++) {
+                for (let col = 0; col < BOARD_SIZE; col++) {
+                    if (board[row][col] === EMPTY) {
                         return false;
                     }
                 }
@@ -298,8 +304,8 @@
 
         // 重新開始 (FR-07)
         function resetGame() {
-            board = Array(15).fill(null).map(() => Array(15).fill(0));
-            currentPlayer = 1;
+            board = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(EMPTY));
+            currentPlayer = BLACK_PLAYER;
             gameActive = true;
             initBoard();
             updateStatus();
