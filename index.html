@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web 五子棋 15×15</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .status-section {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .status-label {
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        .status-value {
+            font-size: 18px;
+            color: #333;
+            padding: 8px 12px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            display: inline-block;
+        }
+
+        .timers {
+            display: flex;
+            gap: 20px;
+        }
+
+        .timer {
+            text-align: center;
+        }
+
+        .timer-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .timer-value {
+            font-size: 24px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            padding: 8px 15px;
+            background: #f8f8f8;
+            border-radius: 5px;
+            min-width: 80px;
+        }
+
+        .timer.black {
+            color: #333;
+        }
+
+        .timer.white {
+            color: #666;
+        }
+
+        .timer.active {
+            background: #fff3cd;
+        }
+
+        .timer.active .timer-value {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .controls label {
+            font-weight: bold;
+            color: #555;
+        }
+
+        .controls select {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .controls button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .controls button:hover {
+            background: #5568d3;
+        }
+
+        .controls button:active {
+            transform: scale(0.98);
+        }
+
+        .board-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(15, 1fr);
+            gap: 1px;
+            background: #8B4513;
+            padding: 10px;
+            border: 3px solid #654321;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .cell {
+            width: 30px;
+            height: 30px;
+            background: #DEB887;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 24px;
+            transition: background 0.2s;
+            position: relative;
+        }
+
+        .cell:hover {
+            background: #F5DEB3;
+        }
+
+        .cell.disabled {
+            cursor: not-allowed;
+        }
+
+        .cell.disabled:hover {
+            background: #DEB887;
+        }
+
+        .message {
+            text-align: center;
+            padding: 10px;
+            margin-top: 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .message.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .cell {
+                width: 25px;
+                height: 25px;
+                font-size: 20px;
+            }
+
+            .timer-value {
+                font-size: 20px;
+                min-width: 70px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Web 五子棋 15×15</h1>
+        
+        <div class="game-info">
+            <div class="status-section">
+                <div class="status-label">遊戲模式</div>
+                <div class="status-value" id="mode-display">PVP</div>
+            </div>
+            <div class="status-section">
+                <div class="status-label">當前回合</div>
+                <div class="status-value" id="turn-display">黑棋</div>
+            </div>
+            <div class="timers">
+                <div class="timer black" id="black-timer">
+                    <div class="timer-label">⚫ 黑棋</div>
+                    <div class="timer-value" id="black-time">00:00</div>
+                </div>
+                <div class="timer white" id="white-timer">
+                    <div class="timer-label">⚪ 白棋</div>
+                    <div class="timer-value" id="white-time">00:00</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <label for="mode-select">模式：</label>
+            <select id="mode-select">
+                <option value="PVP">PVP (雙人對戰)</option>
+                <option value="PVE">PVE (人機對戰)</option>
+            </select>
+            <button id="new-game-btn">新遊戲</button>
+            <button id="undo-btn">悔棋</button>
+        </div>
+
+        <div class="board-container">
+            <div class="board" id="board"></div>
+        </div>
+
+        <div class="message info" id="message">點擊「新遊戲」開始</div>
+    </div>
+
+    <script>
+        // ===== Constants and Enums =====
+        const SIZE = 15;
+        const Cell = {
+            EMPTY: 0,
+            BLACK: 1,
+            WHITE: 2
+        };
+        const Player = {
+            BLACK: 1,
+            WHITE: 2
+        };
+        const Mode = {
+            PVP: 'PVP',
+            PVE: 'PVE'
+        };
+        const Status = {
+            PLAYING: 'PLAYING',
+            FINISHED: 'FINISHED',
+            DRAW: 'DRAW',
+            PAUSED: 'PAUSED'
+        };
+
+        // ===== Game State =====
+        let gameState = {
+            board: null,
+            mode: Mode.PVP,
+            status: Status.PAUSED,
+            currentPlayer: Player.BLACK,
+            winner: null,
+            moves: [],
+            timers: { blackMs: 0, whiteMs: 0 },
+            activeTimerPlayer: null,
+            lastTickAt: null
+        };
+
+        // ===== Rule Engine =====
+        const RuleEngine = {
+            isLegalMove(state, x, y) {
+                if (x < 0 || x >= SIZE || y < 0 || y >= SIZE) return false;
+                if (state.board[y][x] !== Cell.EMPTY) return false;
+                if (state.status !== Status.PLAYING) return false;
+                return true;
+            },
+
+            applyMove(state, x, y, player) {
+                state.board[y][x] = player;
+                state.moves.push({ x, y, player, at: Date.now() });
+            },
+
+            checkWin(state, lastMove) {
+                if (!lastMove) return false;
+                const { x, y, player } = lastMove;
+                const directions = [
+                    [1, 0],   // horizontal
+                    [0, 1],   // vertical
+                    [1, 1],   // diagonal \
+                    [1, -1]   // diagonal /
+                ];
+
+                for (let [dx, dy] of directions) {
+                    let count = 1;
+                    count += this.countDirection(state.board, x, y, dx, dy, player);
+                    count += this.countDirection(state.board, x, y, -dx, -dy, player);
+                    if (count >= 5) return true;
+                }
+                return false;
+            },
+
+            countDirection(board, x, y, dx, dy, player) {
+                let count = 0;
+                let nx = x + dx;
+                let ny = y + dy;
+                while (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE && board[ny][nx] === player) {
+                    count++;
+                    nx += dx;
+                    ny += dy;
+                }
+                return count;
+            },
+
+            checkDraw(state) {
+                for (let y = 0; y < SIZE; y++) {
+                    for (let x = 0; x < SIZE; x++) {
+                        if (state.board[y][x] === Cell.EMPTY) return false;
+                    }
+                }
+                return true;
+            }
+        };
+
+        // ===== Timer Service =====
+        const TimerService = {
+            timerInterval: null,
+
+            start(state, player) {
+                this.stop(state);
+                state.activeTimerPlayer = player;
+                state.lastTickAt = Date.now();
+                
+                this.timerInterval = setInterval(() => {
+                    this.tick(state);
+                }, 200);
+            },
+
+            tick(state) {
+                if (state.activeTimerPlayer === null || state.lastTickAt === null) return;
+                
+                const now = Date.now();
+                const elapsed = now - state.lastTickAt;
+                
+                if (state.activeTimerPlayer === Player.BLACK) {
+                    state.timers.blackMs += elapsed;
+                } else {
+                    state.timers.whiteMs += elapsed;
+                }
+                
+                state.lastTickAt = now;
+                UIRenderer.updateTimers(state);
+            },
+
+            stop(state) {
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+                state.activeTimerPlayer = null;
+                state.lastTickAt = null;
+            },
+
+            formatTime(ms) {
+                const totalSeconds = Math.floor(ms / 1000);
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }
+        };
+
+        // ===== AI Engine =====
+        const AIEngine = {
+            getBestMove(state) {
+                // Check if AI can win immediately
+                const winMove = this.findWinningMove(state, Player.WHITE);
+                if (winMove) return winMove;
+
+                // Check if need to block human from winning
+                const blockMove = this.findWinningMove(state, Player.BLACK);
+                if (blockMove) return blockMove;
+
+                // Get candidate moves and evaluate
+                const candidates = this.getCandidateMoves(state);
+                if (candidates.length === 0) {
+                    // Fallback to center if board is empty
+                    return { x: 7, y: 7 };
+                }
+
+                // Evaluate and pick best candidate
+                let bestMove = candidates[0];
+                let bestScore = -Infinity;
+
+                for (let move of candidates) {
+                    const score = this.evaluateMove(state, move.x, move.y, Player.WHITE);
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMove = move;
+                    }
+                }
+
+                return bestMove;
+            },
+
+            findWinningMove(state, player) {
+                for (let y = 0; y < SIZE; y++) {
+                    for (let x = 0; x < SIZE; x++) {
+                        if (state.board[y][x] === Cell.EMPTY) {
+                            // Try this move
+                            state.board[y][x] = player;
+                            const isWin = RuleEngine.checkWin(state, { x, y, player });
+                            state.board[y][x] = Cell.EMPTY;
+                            
+                            if (isWin) return { x, y };
+                        }
+                    }
+                }
+                return null;
+            },
+
+            getCandidateMoves(state) {
+                const candidates = [];
+                const checked = new Set();
+
+                // Only consider moves near existing pieces
+                for (let y = 0; y < SIZE; y++) {
+                    for (let x = 0; x < SIZE; x++) {
+                        if (state.board[y][x] !== Cell.EMPTY) {
+                            // Check surrounding cells
+                            for (let dy = -2; dy <= 2; dy++) {
+                                for (let dx = -2; dx <= 2; dx++) {
+                                    const nx = x + dx;
+                                    const ny = y + dy;
+                                    const key = `${nx},${ny}`;
+                                    
+                                    if (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE &&
+                                        state.board[ny][nx] === Cell.EMPTY && !checked.has(key)) {
+                                        candidates.push({ x: nx, y: ny });
+                                        checked.add(key);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                return candidates;
+            },
+
+            evaluateMove(state, x, y, player) {
+                let score = 0;
+                const directions = [[1, 0], [0, 1], [1, 1], [1, -1]];
+
+                for (let [dx, dy] of directions) {
+                    const count = 1 + 
+                        this.countInDirection(state.board, x, y, dx, dy, player) +
+                        this.countInDirection(state.board, x, y, -dx, -dy, player);
+                    
+                    // Score based on potential
+                    if (count >= 4) score += 1000;
+                    else if (count === 3) score += 100;
+                    else if (count === 2) score += 10;
+                    else score += 1;
+                }
+
+                // Prefer center positions
+                const centerDist = Math.abs(x - 7) + Math.abs(y - 7);
+                score += (28 - centerDist);
+
+                return score;
+            },
+
+            countInDirection(board, x, y, dx, dy, player) {
+                let count = 0;
+                let nx = x + dx;
+                let ny = y + dy;
+                while (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE && board[ny][nx] === player) {
+                    count++;
+                    nx += dx;
+                    ny += dy;
+                }
+                return count;
+            }
+        };
+
+        // ===== Game Controller =====
+        const GameController = {
+            init() {
+                this.setupEventListeners();
+                UIRenderer.render(gameState);
+            },
+
+            setupEventListeners() {
+                document.getElementById('new-game-btn').addEventListener('click', () => this.newGame());
+                document.getElementById('undo-btn').addEventListener('click', () => this.undo());
+                document.getElementById('mode-select').addEventListener('change', (e) => {
+                    gameState.mode = e.target.value;
+                });
+            },
+
+            newGame() {
+                TimerService.stop(gameState);
+                
+                const mode = document.getElementById('mode-select').value;
+                gameState = {
+                    board: Array(SIZE).fill(null).map(() => Array(SIZE).fill(Cell.EMPTY)),
+                    mode: mode,
+                    status: Status.PLAYING,
+                    currentPlayer: Player.BLACK,
+                    winner: null,
+                    moves: [],
+                    timers: { blackMs: 0, whiteMs: 0 },
+                    activeTimerPlayer: null,
+                    lastTickAt: null
+                };
+
+                TimerService.start(gameState, Player.BLACK);
+                UIRenderer.render(gameState);
+                UIRenderer.showMessage('遊戲開始！黑棋先手', 'info');
+            },
+
+            makeMove(x, y) {
+                if (!RuleEngine.isLegalMove(gameState, x, y)) {
+                    if (gameState.status !== Status.PLAYING) {
+                        UIRenderer.showMessage('遊戲已結束，請開新局或悔棋', 'warning');
+                    } else {
+                        UIRenderer.showMessage('此處已有棋子', 'warning');
+                    }
+                    return;
+                }
+
+                // PVE mode: only allow human (black) to move
+                if (gameState.mode === Mode.PVE && gameState.currentPlayer === Player.WHITE) {
+                    UIRenderer.showMessage('AI 回合中，請稍候', 'warning');
+                    return;
+                }
+
+                this.applyMove(x, y, gameState.currentPlayer);
+            },
+
+            applyMove(x, y, player) {
+                RuleEngine.applyMove(gameState, x, y, player);
+                UIRenderer.render(gameState);
+
+                const lastMove = gameState.moves[gameState.moves.length - 1];
+
+                // Check win
+                if (RuleEngine.checkWin(gameState, lastMove)) {
+                    gameState.status = Status.FINISHED;
+                    gameState.winner = player;
+                    TimerService.stop(gameState);
+                    
+                    const playerName = player === Player.BLACK ? '黑棋' : '白棋';
+                    UIRenderer.showMessage(`${playerName}獲勝！`, 'success');
+                    UIRenderer.render(gameState);
+                    return;
+                }
+
+                // Check draw
+                if (RuleEngine.checkDraw(gameState)) {
+                    gameState.status = Status.DRAW;
+                    TimerService.stop(gameState);
+                    UIRenderer.showMessage('和局！', 'info');
+                    UIRenderer.render(gameState);
+                    return;
+                }
+
+                // Switch player
+                gameState.currentPlayer = gameState.currentPlayer === Player.BLACK ? Player.WHITE : Player.BLACK;
+                TimerService.start(gameState, gameState.currentPlayer);
+                UIRenderer.render(gameState);
+
+                // If PVE and now AI's turn, trigger AI move
+                if (gameState.mode === Mode.PVE && gameState.currentPlayer === Player.WHITE) {
+                    this.triggerAIMove();
+                }
+            },
+
+            triggerAIMove() {
+                UIRenderer.showMessage('AI 思考中...', 'info');
+                
+                // Delay for better UX
+                setTimeout(() => {
+                    const move = AIEngine.getBestMove(gameState);
+                    this.applyMove(move.x, move.y, Player.WHITE);
+                    UIRenderer.showMessage('AI 已落子', 'info');
+                }, 500);
+            },
+
+            undo() {
+                if (gameState.moves.length === 0) {
+                    UIRenderer.showMessage('無法悔棋：沒有可撤回的步數', 'warning');
+                    return;
+                }
+
+                const stepsToUndo = gameState.mode === Mode.PVE ? Math.min(2, gameState.moves.length) : 1;
+
+                for (let i = 0; i < stepsToUndo; i++) {
+                    if (gameState.moves.length === 0) break;
+                    
+                    const lastMove = gameState.moves.pop();
+                    gameState.board[lastMove.y][lastMove.x] = Cell.EMPTY;
+                }
+
+                // Restore game state
+                if (gameState.moves.length > 0) {
+                    const newLastMove = gameState.moves[gameState.moves.length - 1];
+                    gameState.currentPlayer = newLastMove.player === Player.BLACK ? Player.WHITE : Player.BLACK;
+                } else {
+                    gameState.currentPlayer = Player.BLACK;
+                }
+
+                // If was finished/draw, restore to playing
+                if (gameState.status === Status.FINISHED || gameState.status === Status.DRAW) {
+                    gameState.status = Status.PLAYING;
+                    gameState.winner = null;
+                }
+
+                TimerService.start(gameState, gameState.currentPlayer);
+                UIRenderer.render(gameState);
+                UIRenderer.showMessage(`已悔棋 ${stepsToUndo} 步`, 'info');
+            }
+        };
+
+        // ===== UI Renderer =====
+        const UIRenderer = {
+            render(state) {
+                this.renderBoard(state);
+                this.renderStatus(state);
+                this.updateTimers(state);
+            },
+
+            renderBoard(state) {
+                const boardEl = document.getElementById('board');
+                boardEl.innerHTML = '';
+
+                for (let y = 0; y < SIZE; y++) {
+                    for (let x = 0; x < SIZE; x++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.x = x;
+                        cell.dataset.y = y;
+
+                        if (state.board && state.board[y][x] === Cell.BLACK) {
+                            cell.textContent = '⚫';
+                        } else if (state.board && state.board[y][x] === Cell.WHITE) {
+                            cell.textContent = '⚪';
+                        }
+
+                        if (state.status !== Status.PLAYING) {
+                            cell.classList.add('disabled');
+                        }
+
+                        cell.addEventListener('click', () => {
+                            const cx = parseInt(cell.dataset.x);
+                            const cy = parseInt(cell.dataset.y);
+                            GameController.makeMove(cx, cy);
+                        });
+
+                        boardEl.appendChild(cell);
+                    }
+                }
+            },
+
+            renderStatus(state) {
+                const modeDisplay = document.getElementById('mode-display');
+                const turnDisplay = document.getElementById('turn-display');
+
+                modeDisplay.textContent = state.mode;
+
+                if (state.status === Status.FINISHED) {
+                    const winnerName = state.winner === Player.BLACK ? '黑棋' : '白棋';
+                    turnDisplay.textContent = `${winnerName}獲勝`;
+                } else if (state.status === Status.DRAW) {
+                    turnDisplay.textContent = '和局';
+                } else {
+                    const playerName = state.currentPlayer === Player.BLACK ? '黑棋' : '白棋';
+                    turnDisplay.textContent = playerName;
+                }
+            },
+
+            updateTimers(state) {
+                const blackTimeEl = document.getElementById('black-time');
+                const whiteTimeEl = document.getElementById('white-time');
+                const blackTimerEl = document.getElementById('black-timer');
+                const whiteTimerEl = document.getElementById('white-timer');
+
+                blackTimeEl.textContent = TimerService.formatTime(state.timers.blackMs);
+                whiteTimeEl.textContent = TimerService.formatTime(state.timers.whiteMs);
+
+                // Highlight active timer
+                if (state.activeTimerPlayer === Player.BLACK) {
+                    blackTimerEl.classList.add('active');
+                    whiteTimerEl.classList.remove('active');
+                } else if (state.activeTimerPlayer === Player.WHITE) {
+                    whiteTimerEl.classList.add('active');
+                    blackTimerEl.classList.remove('active');
+                } else {
+                    blackTimerEl.classList.remove('active');
+                    whiteTimerEl.classList.remove('active');
+                }
+            },
+
+            showMessage(text, type = 'info') {
+                const messageEl = document.getElementById('message');
+                messageEl.textContent = text;
+                messageEl.className = `message ${type}`;
+            }
+        };
+
+        // ===== Initialize Game =====
+        window.addEventListener('DOMContentLoaded', () => {
+            GameController.init();
+        });
+    </script>
+</body>
+</html>
